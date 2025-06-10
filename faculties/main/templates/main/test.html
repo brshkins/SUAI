@@ -1,0 +1,112 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест | ГУАП</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url("{% static 'main/img/background.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+            color: #fff;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        body::before {
+            background: rgba(0, 45, 90, 0.7);
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #fff;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        label {
+            font-size: 1.2rem;
+            color: #fff;
+            text-align: left;
+        }
+
+        select, input[type="submit"] {
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+        }
+
+        input[type="submit"] {
+            background-color: #330066;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #4b0099;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Ответь на несколько вопросов</h2>
+        <form method="post" action="{% url 'test_result' %}">
+            {% csrf_token %}
+            <label for="math_level">Какой уровень математики тебе ближе?</label>
+            <select id="math_level" name="math_level">
+                <option value="basic">Базовый</option>
+                <option value="advanced">Продвинутый</option>
+            </select>
+
+            <label for="interest">Что тебе интереснее всего?</label>
+            <select id="interest" name="interest">
+                <option value="tech">Техника, программирование, инженерия</option>
+                <option value="business">Экономика, управление, финансы</option>
+                <option value="creative">Дизайн, медиа, креатив</option>
+            </select>
+
+            <input type="submit" value="Узнать результат">
+        </form>
+    </div>
+</body>
+</html>
