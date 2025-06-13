@@ -3,49 +3,49 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тест | ГУАП</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>RIASEC Тест</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
         body {
-            font-family: 'Montserrat', sans-serif;
             margin: 0;
             padding: 0;
-            background-image: url("{% static 'main/img/background.jpg' %}");
-            background-size: cover;
-            background-position: center;
-            min-height: 100vh;
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(ellipse at top left, #0f0f2d, #05050f);
             color: #fff;
-            text-align: center;
             display: flex;
-            flex-direction: column;
             justify-content: center;
-            align-items: center;
-            padding: 20px;
-            position: relative;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
         }
 
-        body::before {
-            background: rgba(0, 45, 90, 0.7);
+
+
+        .logo {
+            position: absolute;
+            top: 1px;
+            left: 10px;
+            width: 200px;
+            height: auto;
+            filter: drop-shadow(0 0 5px rgba(164, 92, 255, 0.5));
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+            filter: drop-shadow(0 0 10px rgba(164, 92, 255, 0.8));
+            transform: scale(1.05);
         }
 
         .container {
-            position: relative;
-            z-index: 1;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 40px;
-            border-radius: 20px;
-            max-width: 800px;
             width: 100%;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 800px;
         }
 
-        h2 {
+        h1 {
+            text-align: center;
             font-size: 2rem;
-            margin-bottom: 1.5rem;
-            color: #fff;
+            margin-bottom: 40px;
         }
 
         form {
@@ -54,58 +54,84 @@
             gap: 20px;
         }
 
-        label {
-            font-size: 1.2rem;
-            color: #fff;
-            text-align: left;
+        .question-block {
+            background: rgba(15, 15, 45, 0.6); /* темный фон */
+            border: 1px solid rgba(0, 126, 223, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(31, 89, 212, 0.3);
+            transition: all 0.3s ease;
         }
 
-        select, input[type="submit"] {
-            padding: 12px 20px;
-            font-size: 1rem;
-            border-radius: 10px;
+        .question-block:hover {
+            box-shadow: 0 0 25px rgba(0, 126, 223, 0.6);
+        }
+
+        .question-title {
+            background: rgba(41, 63, 161, 0.4); /* тёмно-синяя подложка */
+            padding: 12px 16px;
+            border-left: 4px solid var(--guap-purple);
+            border-radius: 8px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #ffffff;
+            text-shadow: 0 0 3px var(--guap-purple);
+        }
+
+        .form-check {
+            margin-bottom: 10px;
+            padding-left: 8px;
+        }
+
+        .form-check input[type="radio"] {
+            margin-right: 10px;
+            accent-color: #a45cff;
+        }
+
+        .form-check label {
+            font-weight: 500;
+        }
+
+        button {
+            align-self: center;
+            background: linear-gradient(90deg, #7f00ff, #e100ff);
             border: none;
-            outline: none;
-        }
-
-        input[type="submit"] {
-            background-color: #330066;
             color: white;
+            padding: 15px 40px;
+            font-size: 1rem;
+            border-radius: 30px;
             cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
+            transition: background 0.3s ease, transform 0.2s ease;
+            margin-top: 30px;
         }
 
-        input[type="submit"]:hover {
-            background-color: #4b0099;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 30px 20px;
-            }
+        button:hover {
+            background: linear-gradient(90deg, #a45cff, #d95fff);
+            transform: translateY(-2px);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Ответь на несколько вопросов</h2>
-        <form method="post" action="{% url 'test_result' %}">
+        <img src="{% static 'main/img/logo2.svg' %}" alt="Логотип ГУАП" class="logo">
+        <h1>Выбери свой путь в Первом аэрокосмическом</h1>
+        <form method="POST" action="{% url 'test_result' %}">
             {% csrf_token %}
-            <label for="math_level">Какой уровень математики тебе ближе?</label>
-            <select id="math_level" name="math_level">
-                <option value="basic">Базовый</option>
-                <option value="advanced">Продвинутый</option>
-            </select>
-
-            <label for="interest">Что тебе интереснее всего?</label>
-            <select id="interest" name="interest">
-                <option value="tech">Техника, программирование, инженерия</option>
-                <option value="business">Экономика, управление, финансы</option>
-                <option value="creative">Дизайн, медиа, креатив</option>
-            </select>
-
-            <input type="submit" value="Узнать результат">
+            {% for number, q in questions.items %}
+                <div class="question-block">
+                    <div class="question-title">{{ number }}. {{ q.text }}</div>
+                    {% for code, answer in q.variants.items %}
+                        <div class="form-check">
+                            <label>
+                                <input type="radio" name="q{{ number }}" value="{{ code }}" required>
+                                {{ answer }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit">Завершить тест</button>
         </form>
     </div>
 </body>
