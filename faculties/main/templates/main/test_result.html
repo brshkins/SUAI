@@ -1,10 +1,257 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>результаты теста</title>
+    <title>Результаты теста RIASEC</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(ellipse at top left, #0f0f2d, #05050f);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .logo {
+            position: absolute;
+            top: 1px;
+            left: 10px;
+            width: 200px;
+            height: auto;
+            filter: drop-shadow(0 0 5px rgba(0, 168, 232, 0.5));
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+            filter: drop-shadow(0 0 10px rgba(0, 168, 232, 0.8));
+            transform: scale(1.05);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+        }
+
+        .result-section {
+            background: rgba(15, 15, 45, 0.6);
+            border: 1px solid rgba(0, 126, 223, 0.2);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 15px rgba(31, 89, 212, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .result-section:hover {
+            box-shadow: 0 0 25px rgba(0, 126, 223, 0.6);
+        }
+
+        .result-title {
+            background: rgba(41, 63, 161, 0.4);
+            padding: 12px 16px;
+            border-left: 4px solid #00a8e8;
+            border-radius: 8px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #ffffff;
+            text-shadow: 0 0 3px #00a8e8;
+        }
+
+        .type-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #007edf, #00a8e8);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 0 10px rgba(0, 126, 223, 0.5);
+            color: white;
+        }
+
+        .program-card {
+            background: rgba(15, 15, 45, 0.6);
+            border: 1px solid rgba(0, 126, 223, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px rgba(31, 89, 212, 0.3);
+        }
+
+        .program-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .program-code {
+            background: rgba(0, 126, 223, 0.2);
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-right: 15px;
+            font-family: monospace;
+            color: #00a8e8;
+        }
+
+        .ege-badge {
+            display: inline-block;
+            background: rgba(0, 126, 223, 0.2);
+            padding: 6px 14px;
+            border-radius: 15px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #b8d9ff;
+        }
+
+        .professions-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .profession-item {
+            background: rgba(0, 168, 232, 0.15);
+            border: 1px solid rgba(0, 168, 232, 0.3);
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+        }
+
+        .btn {
+            background: linear-gradient(90deg, #007edf, #00a8e8);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .info-block {
+            margin-top: 20px;
+        }
+
+        .info-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #00a8e8;
+        }
+
+        .info-text {
+            color: #d1e8ff;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+    </style>
 </head>
 <body>
-    <h1>cпасибо за прохождение теста</h1>
+    <div class="container">
+        <img src="{% static 'main/img/logo2.svg' %}" alt="Логотип ГУАП" class="logo">
+        <h1>Ваши результаты</h1>
+
+        <div class="result-section">
+            <div class="result-title">Ваши доминирующие типы личности</div>
+            <div>
+                {% for type, score in sorted_results %}
+                    <span class="type-badge">
+                        {{ type }}: {{ score }} баллов —
+                        {% if type == 'R' %}Реалистичный{% elif type == 'I' %}Интеллектуальный
+                        {% elif type == 'A' %}Артистичный{% elif type == 'S' %}Социальный
+                        {% elif type == 'E' %}Предприимчивый{% elif type == 'C' %}Конвенциональный{% endif %}
+                    </span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="result-section">
+            <div class="result-title">Рекомендуемые направления обучения</div>
+            <div class="info-text" style="margin-bottom: 20px;">
+                Подбор основан на ваших топ-3 типах личности по тесту RIASEC:
+                <strong>{{ top_types|join:", " }}</strong>.
+                {% if match_type == 'similar' %}
+                    <br><em>Нет полного совпадения, но вот направления с похожими интересами:</em>
+                {% elif match_type == 'permutation' %}
+                    <br><em>Подобраны направления с аналогичным составом интересов (перестановка букв):</em>
+                {% endif %}
+            </div>
+
+            {% for program in recommended_programs %}
+            <div class="program-card">
+                <div class="program-title">
+                    <span class="program-code">{{ program.program_code }}</span>
+                    {{ program.program_name }}
+                </div>
+
+                <div class="info-block">
+                    <div class="info-title">Описание:</div>
+                    <div class="info-text">{{ program.description }}</div>
+                </div>
+
+                <div class="info-block">
+                    <div class="info-title">Необходимые ЕГЭ:</div>
+                    <div>
+                        {% for subject in program.get_ege_list %}
+                        <span class="ege-badge">{{ subject }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="info-block">
+                    <div class="info-title">Приобретаемые навыки:</div>
+                    <div class="info-text">
+                        {{ program.get_skills_list|join:", " }}
+                    </div>
+                </div>
+
+                <div class="info-block">
+                    <div class="info-title">Возможные профессии:</div>
+                    <div class="professions-list">
+                        {% for profession in program.get_professions_list %}
+                        <div class="profession-item">{{ profession }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="program-card">
+                <p>Для вашего типа личности пока нет рекомендаций.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center">
+            <a href="{% url 'test' %}" class="btn">Пройти тест снова</a>
+        </div>
+    </div>
 </body>
 </html>

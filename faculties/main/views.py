@@ -1,5 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from collections import defaultdict
+from .models import RIASECResult, ProgramRecommendation
+from django.db.models import Q
+from itertools import permutations
+
 
 # 12 вопросов с вариантами RIASEC
 questions = {
@@ -126,7 +130,7 @@ questions = {
     },
     12: {
         "text": "Где бы ты хотел оказаться через 5 лет?",
-"variants": {
+        "variants": {
             "R": "На производстве или в мастерской",
             "I": "В лаборатории или исследовательском центре",
             "A": "На сцене или в студии",
@@ -142,17 +146,80 @@ def index(request):
 def test_views(request):
     return render(request, 'main/test.html', {'questions': questions})
 
-
 def test_result(request):
-    if request.method == 'POST':
-        scores = defaultdict(int)
-        for i in range(1, 13):
-            answer = request.POST.get(f'q{i}')
-            if answer in 'RIASEC':
-                scores[answer] += 1
+    if request.method != 'POST':
+        return redirect('test')  # если не POST-запрос, уводим
 
-        sorted_result = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        return render(request, 'main/test_result.html', {'result': sorted_result})
+    # Подсчёт баллов по каждому типу
+    scores = defaultdict(int)
+    for q_id in range(1, 13):
+        answer = request.POST.get(f'q{q_id}')
+        if answer in ['R', 'I', 'A', 'S', 'E', 'C']:
+            scores[answer] += 1
 
-    return render(request, 'main/test.html', {'questions': questions})
+    # Преобразуем и сортируем
+    scores_dict = dict(scores)
+    sorted_results = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
+    unique_types = []
+    for t, score in sorted_results:
+        if t not in unique_types:
+            unique_types.append(t)
+        if len(unique_types) == 3:
+            break
+    top_types = unique_types
 
+    # Сохраняем результат в БД
+    result = RIASECResult(
+        user=request.user if request.user.is_authenticated else None,
+        session_key=request.session.session_key if not request.user.is_authenticated else None,
+        realistic=scores_dict.get('R', 0),
+        investigative=scores_dict.get('I', 0),
+        artistic=scores_dict.get('A', 0),
+        social=scores_dict.get('S', 0),
+        enterprising=scores_dict.get('E', 0),
+        conventional=scores_dict.get('C', 0),
+        primary_type=top_types[0] if len(top_types) > 0 else 'R',
+        secondary_type=top_types[1] if len(top_types) > 1 else 'I',
+        tertiary_type=top_types[2] if len(top_types) > 2 else 'A',
+    )
+    result.save()
+
+    # Строгое совпадение трёхбуквенного кода
+    riasec_code = ''.join(top_types[:3])
+    recommended_programs = []
+    match_type = "exact"
+
+    # 1. Ищем точное совпадение
+    recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type=riasec_code))
+
+    # 2. Перестановки
+    if not recommended_programs:
+        match_type = "permutation"
+        perms = [''.join(p) for p in permutations(top_types, 3)]
+        recommended_programs = list(
+            ProgramRecommendation.objects.filter(riasec_type__in=perms)
+        )
+
+    # 3. Похожие по 2/3 буквам
+    if not recommended_programs:
+        match_type = "similar"
+        all_codes = ProgramRecommendation.objects.values_list('riasec_type', flat=True).distinct()
+        similar_codes = []
+        for code in all_codes:
+            if len(code) != 3:
+                continue
+            match_count = sum(1 for c in code if c in top_types)
+            if match_count >= 2:
+                similar_codes.append(code)
+
+        recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=similar_codes))
+
+    context = {
+        'scores': scores_dict,
+        'sorted_results': sorted_results,
+        'top_types': top_types,
+        'recommended_programs': recommended_programs,
+        'match_type': match_type
+    }
+
+    return render(request, 'main/test_result.html', context)
