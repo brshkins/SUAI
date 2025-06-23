@@ -22,22 +22,17 @@
 
         *{box-sizing:border-box;margin:0;padding:0}
 
-        /* --- фон и выравнивание --- */
-        body{
-            font-family:'Montserrat',sans-serif;
-            min-height:100vh;
-            background-image:url("{% static 'main/img/background.jpg' %}");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-color: #001d3d;
-            display:flex;
-            justify-content:center;
-            align-items:center;           /* вертикальное + горизонтальное центрирование */
-            text-align:center;
-            position:relative;
-            padding:20px;
-            color:#fff;
+        body {
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            background: url("{% static 'main/img/background.jpg' %}") no-repeat bottom center / cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            padding: 20px;
+            color: #fff;
         }
         /* затемнение */
         body::before{
