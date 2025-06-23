@@ -26,7 +26,11 @@
         body{
             font-family:'Montserrat',sans-serif;
             min-height:100vh;
-            background:url("{% static 'main/img/background.jpg' %}") center/cover no-repeat;
+            background-image:url("{% static 'main/img/background.jpg' %}") center/cover no-repeat;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #001d3d;
             display:flex;
             justify-content:center;
             align-items:center;           /* вертикальное + горизонтальное центрирование */
