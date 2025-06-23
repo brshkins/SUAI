@@ -5,141 +5,132 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тест для абитуриентов | ГУАП</title>
+
+    <!-- шрифт -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap');
-
-        body {
-            font-family: 'Montserrat', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-image: url("{% static 'main/img/background.jpg' %}");
-            background-size: cover;
-            background-position: center;
-            min-height: 100vh;
-            color: #fff;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            position: relative;
+        :root{
+            --violet:#330066;
+            --violet-light:#7f00ff;
+            --violet-lighter:#e100ff;
         }
 
-        body::before {
-            background: rgba(0, 45, 90, 0.7);
+        *{box-sizing:border-box;margin:0;padding:0}
+
+        /* --- фон и выравнивание --- */
+        body{
+            font-family:'Montserrat',sans-serif;
+            min-height:100vh;
+            background:url("{% static 'main/img/background.jpg' %}") center/cover no-repeat;
+            display:flex;
+            justify-content:center;
+            align-items:center;           /* вертикальное + горизонтальное центрирование */
+            text-align:center;
+            position:relative;
+            padding:20px;
+            color:#fff;
+        }
+        /* затемнение */
+        body::before{
+            content:"";
+            position:fixed;
+            inset:0;
+            background:rgba(0,45,90,.7);
+            z-index:-1;
         }
 
-        .logo {
-            width: 400px;
-            height: auto;
-            margin-bottom: 1.5rem;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        /* --- карточка --- */
+        .content{
+            max-width:800px;
+            width:100%;
+            padding:40px;
+            background:rgba(255,255,255,.1);
+            backdrop-filter:blur(10px);
+            border-radius:20px;
+            box-shadow:0 8px 32px rgba(0,0,0,.2);
+            border:1px solid rgba(255,255,255,.1);
         }
 
-        .content {
-            max-width: 800px;
-            width: 100%;
-            position: relative;
-            z-index: 1;
-            padding: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .logo{
+            width:400px;
+            margin:0 auto 24px auto;
+            filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));
         }
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            line-height: 1.3;
-            color: #fff;
+        h1{
+            font-size:2.5rem;
+            font-weight:700;
+            margin-bottom:1.5rem;
+            line-height:1.3;
+            text-shadow:0 2px 4px rgba(0,0,0,.3);
         }
 
-        .description {
-            font-size: 1.25rem;
-            font-weight: 400;
-            margin: 0 auto 3rem auto;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            opacity: 0.9;
-            line-height: 1.7;
-            color: rgba(255, 255, 255, 0.95);
-            max-width: 600px;
+        .description{
+            font-size:1.25rem;
+            line-height:1.7;
+            opacity:.95;
+            max-width:600px;
+            margin:0 auto 2.8rem auto;
+            text-shadow:0 1px 2px rgba(0,0,0,.3);
         }
 
-        .test-btn {
-            text-decoration: none;
-            background-color: #330066;
-            color: white;
-            border: none;
-            padding: 18px 45px 18px 60px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.5);
-            position: relative;
-            overflow: hidden;
-            letter-spacing: 0.5px;
-            display: inline-block;
+        /* --- кнопка --- */
+        .test-btn{
+            display:inline-block;
+            position:relative;
+            padding:18px 45px 18px 60px;
+            background:var(--violet);
+            color:#fff;
+            font-size:1.1rem;
+            font-weight:600;
+            border:none;
+            border-radius:50px;
+            cursor:pointer;
+            letter-spacing:.5px;
+            transition:all .3s;
+            box-shadow:0 4px 15px rgba(106,17,203,.5);
+            text-decoration:none;
         }
-
-        .test-btn::before {
-            content: '🚀';
-            position: absolute;
-            left: 25px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1.5rem;
-            transition: all 0.3s ease;
+        .test-btn::before{
+            content:"🚀";
+            position:absolute;
+            left:25px;
+            top:50%;
+            transform:translateY(-50%);
+            font-size:1.5rem;
+            transition:.3s;
         }
-
-        .test-btn:hover {
-            transform: translateY(-3px);
+        .test-btn:hover{
+            transform:translateY(-3px);
             box-shadow:
-                0 0 15px rgba(255, 255, 255, 0.8),
-                0 0 25px rgba(255, 255, 255, 0.7),
-                0 0 40px rgba(255, 255, 255, 0.6); /* градиентное свечение */
+                0 0 15px rgba(255,255,255,.8),
+                0 0 25px rgba(255,255,255,.7),
+                0 0 40px rgba(255,255,255,.6);
+            background:linear-gradient(90deg,var(--violet-light),var(--violet-lighter));
         }
+        .test-btn:hover::before{transform:translate(-5px,-50%)}
 
-        .test-btn:hover::before {
-            transform: translateY(-50%) translateX(5px);
-        }
-
-        @media (max-width: 768px) {
-            .logo {
-                width: 250px;
-            }
-            h1 {
-                font-size: 2rem;
-            }
-            .description {
-                font-size: 1.1rem;
-            }
-            .test-btn {
-                padding: 16px 40px 16px 55px;
-                font-size: 1rem;
-            }
-            .test-btn::before {
-                left: 20px;
-                font-size: 1.3rem;
-            }
-            .content {
-                padding: 30px 20px;
-            }
+        /* --- мобильная адаптация --- */
+        @media(max-width:768px){
+            .logo{width:230px;margin-bottom:20px}
+            .content{padding:30px 20px}
+            h1{font-size:2rem;margin-bottom:1.2rem}
+            .description{font-size:1.1rem;margin-bottom:2.2rem}
+            .test-btn{padding:16px 40px 16px 55px;font-size:1rem}
+            .test-btn::before{left:20px;font-size:1.3rem}
         }
     </style>
 </head>
 <body>
-    <div class="centered">
+    <div class="content">
         <img src="{% static 'main/img/logo1.svg' %}" alt="Логотип ГУАП" class="logo">
 
         <h1>Выбери свой путь!</h1>
-        <p class="description">Пройди короткий тест, и мы подберем для тебя подходящее направление обучения</p>
+        <p class="description">
+            Пройди короткий тест, и мы подберём для тебя подходящее направление обучения
+        </p>
+
         <a href="{% url 'test' %}" class="test-btn">Начать тест</a>
     </div>
 </body>
