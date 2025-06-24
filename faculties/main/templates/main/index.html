@@ -34,13 +34,19 @@
             padding: 20px;
             color: #fff;
         }
-        /* затемнение */
-        body::before{
-            content:"";
-            position:fixed;
-            inset:0;
-            background:rgba(0,0,0,0.3);
-            z-index:-1;
+
+        body::before {
+          content: "";
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100vh;
+          background-image: url("{% static 'main/img/background.jpg' %}");
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          z-index: -1;
         }
 
         /* --- карточка --- */
