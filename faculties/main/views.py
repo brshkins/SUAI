@@ -146,6 +146,20 @@ def index(request):
 def test_views(request):
     return render(request, 'main/test.html', {'questions': questions})
 
+
+def expand_code_if_needed(top_types, scores_dict):
+    if len(top_types) >= 3:
+        return top_types[:3]
+
+    # Дополняем по убыванию частоты
+    all_sorted = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
+    added = [t for t, _ in all_sorted if t not in top_types]
+
+    while len(top_types) < 3 and added:
+        top_types.append(added.pop(0))
+
+    return top_types[:3]
+
 def test_result(request):
     if request.method != 'POST':
         return redirect('test')  # если не POST-запрос, уводим
@@ -160,13 +174,37 @@ def test_result(request):
     # Преобразуем и сортируем
     scores_dict = dict(scores)
     sorted_results = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
-    unique_types = []
-    for t, score in sorted_results:
-        if t not in unique_types:
-            unique_types.append(t)
-        if len(unique_types) == 3:
-            break
-    top_types = unique_types
+    top_types = [t for t, _ in sorted_results if _ > 0]
+
+    #Если только 1 буква — достраиваем вручную (по популярным шаблонам)
+    if len(top_types) == 1:
+        base = top_types[0]
+        common_combos = {
+            'R': ['RI', 'RE', 'RC'],
+            'I': ['IR', 'IA', 'IC'],
+            'A': ['AI', 'AS', 'AR'],
+            'S': ['SC', 'SA', 'SE'],
+            'E': ['ER', 'ES', 'EC'],
+            'C': ['CR', 'CE', 'CS'],
+        }
+        top_types = list(common_combos.get(base, []))[0]  # достраиваем до пары
+        top_types = list(top_types)  # превратили строку в список символов
+
+    #Если 2 буквы — пробуем все варианты с 3-й буквой
+    elif len(top_types) == 2:
+        all_types = {'R', 'I', 'A', 'S', 'E', 'C'}
+        candidates = []
+        for t in all_types - set(top_types):
+            candidates.append(''.join(top_types + [t]))
+        top_types = list(top_types)  # чтобы совместимо с остальной логикой
+
+        # и используем этот список в запросе ниже:
+        riasec_code = ''.join(top_types)
+        match_type = "short"
+
+        recommended_programs = list(
+            ProgramRecommendation.objects.filter(riasec_type__in=candidates)
+        )
 
     # Сохраняем результат в БД
     result = RIASECResult(
@@ -213,7 +251,7 @@ def test_result(request):
                 similar_codes.append(code)
 
         recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=similar_codes))
-
+    recommended_programs = recommended_programs[:5]
     context = {
         'scores': scores_dict,
         'sorted_results': sorted_results,

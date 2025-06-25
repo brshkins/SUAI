@@ -196,12 +196,14 @@
         <div class="result-section">
             <div class="result-title">Рекомендуемые направления обучения</div>
             <div class="info-text" style="margin-bottom: 20px;">
-                Подбор основан на ваших топ-3 типах личности по тесту RIASEC:
+                Подбор основан на ваших топ-{{ top_types|length }} типах личности по тесту RIASEC:
                 <strong>{{ top_types|join:", " }}</strong>.
                 {% if match_type == 'similar' %}
                     <br><em>Нет полного совпадения, но вот направления с похожими интересами:</em>
                 {% elif match_type == 'permutation' %}
                     <br><em>Подобраны направления с аналогичным составом интересов (перестановка букв):</em>
+                {% elif match_type == 'short' %}
+                    <br><em>Подобраны направления, начинающиеся с ваших двух типов:</em>
                 {% endif %}
             </div>
 
