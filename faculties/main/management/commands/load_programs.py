@@ -38,6 +38,7 @@ class Command(BaseCommand):
                     skills=str(row['навыки']).strip(),
                     professions=str(row['профессии']).strip(),
                     ege_subjects=str(row['егэ']).strip(),
+                    entrance_tests=str(row['ви']).strip(),
                     program_code=''  # пока без кода
                 )
                 count += 1

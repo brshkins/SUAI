@@ -63,11 +63,16 @@ class ProgramRecommendation(models.Model):
     ege_subjects = models.TextField(
         help_text="Необходимые ЕГЭ (через запятую): Математика, Русский язык, Физика и т.д."
     )
+    entrance_tests = models.TextField(
+        blank=True,
+        default='',
+        help_text="Необходимые ВИ (через запятую)..."
+    )
     professions = models.TextField(help_text="Перечислите профессии через запятую")
     program_code = models.CharField(max_length=20, blank=True)
 
     def __str__(self):
-        return f"{self.program_code} ({self.get_riasec_type_display()})"
+        return f"{self.program_code} ({self.riasec_type})"
 
     def get_skills_list(self):
         return [s.strip() for s in self.skills.split(',')]
@@ -77,3 +82,6 @@ class ProgramRecommendation(models.Model):
 
     def get_professions_list(self):
         return [p.strip() for p in self.professions.split(',')]
+
+    def get_vi_list(self):
+        return [v.strip() for v in self.entrance_tests.split(',')]

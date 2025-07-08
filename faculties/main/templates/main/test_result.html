@@ -225,11 +225,20 @@
                 </div>
 
                 <div class="info-block">
-                    <div class="info-title">Необходимые ЕГЭ:</div>
-                    <div>
-                        {% for subject in program.get_ege_list %}
-                        <span class="ege-badge">{{ subject }}</span>
-                        {% endfor %}
+                    <div class="info-title">Вступительные испытания и ЕГЭ:</div>
+                    <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+                        <div>
+                            <strong>ЕГЭ:</strong><br>
+                            {% for subject in program.get_ege_list %}
+                            <span class="ege-badge">{{ subject }}</span>
+                            {% endfor %}
+                        </div>
+                        <div>
+                            <strong>ВИ:</strong><br>
+                            {% for test in program.get_vi_list %}
+                            <span class="ege-badge">{{ test }}</span>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
 
