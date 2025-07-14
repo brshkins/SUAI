@@ -161,6 +161,23 @@ def expand_code_if_needed(top_types, scores_dict):
 
     return top_types[:3]
 
+def get_programs_for_single_type(leading_type, max_programs=5):
+    all_codes = ProgramRecommendation.objects.filter(riasec_type__startswith=leading_type)\
+        .values_list('riasec_type', flat=True).distinct()
+    used_codes = set()
+    selected_programs = []
+
+    for code in all_codes:
+        if code not in used_codes:
+            program = ProgramRecommendation.objects.filter(riasec_type=code).order_by('?').first()
+            if program:
+                selected_programs.append(program)
+                used_codes.add(code)
+            if len(selected_programs) >= max_programs:
+                break
+
+    return selected_programs
+
 def test_result(request):
     if request.method != 'POST':
         return redirect('test')
@@ -179,13 +196,28 @@ def test_result(request):
     match_type = "exact"
     recommended_programs = []
 
+    POPULAR_CODES_BY_LEAD = {
+        'I': ['ICR', 'IRE', 'IEC', 'IRC', 'IAC'],
+        'A': ['AIC', 'AIE', 'AES', 'ARS'],
+        'C': ['CIR', 'CRI', 'CIE', 'CRE', 'CES'],
+        'R': ['RIC', 'RCI', 'REI'],
+        'E': ['ESC'],
+    }
+
     if len(top_types) == 1:
-        # Один тип: ищем программы, начинающиеся с этой буквы
-        riasec_code = top_types[0]
-        match_type = "starts_with"
-        recommended_programs = list(
-            ProgramRecommendation.objects.filter(riasec_type__startswith=riasec_code)
-        )
+        match_type = "popular_codes"
+        lead = top_types[0]
+        recommended_programs = []
+        used_program_ids = set()
+
+        for code in POPULAR_CODES_BY_LEAD.get(lead, []):
+            programs = ProgramRecommendation.objects.filter(riasec_type=code).exclude(id__in=used_program_ids)
+            if programs.exists():
+                selected = random.choice(programs)
+                recommended_programs.append(selected)
+                used_program_ids.add(selected.id)
+            if len(recommended_programs) >= 5:
+                break
 
     elif len(top_types) == 2:
         # Два типа: генерируем все тройки с добавлением третьей
@@ -227,7 +259,6 @@ def test_result(request):
                 ProgramRecommendation.objects.filter(riasec_type__in=similar_codes)
             )
 
-    random.shuffle(recommended_programs)
     recommended_programs = recommended_programs[:5]
 
     # Сохраняем в БД
