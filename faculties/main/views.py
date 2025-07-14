@@ -3,6 +3,7 @@ from collections import defaultdict
 from .models import RIASECResult, ProgramRecommendation
 from django.db.models import Q
 from itertools import permutations
+import random
 
 
 # 12 вопросов с вариантами RIASEC
@@ -162,51 +163,74 @@ def expand_code_if_needed(top_types, scores_dict):
 
 def test_result(request):
     if request.method != 'POST':
-        return redirect('test')  # если не POST-запрос, уводим
+        return redirect('test')
 
-    # Подсчёт баллов по каждому типу
+    # Подсчёт баллов
     scores = defaultdict(int)
     for q_id in range(1, 13):
         answer = request.POST.get(f'q{q_id}')
         if answer in ['R', 'I', 'A', 'S', 'E', 'C']:
             scores[answer] += 1
 
-    # Преобразуем и сортируем
     scores_dict = dict(scores)
     sorted_results = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
     top_types = [t for t, _ in sorted_results if _ > 0]
 
-    #Если только 1 буква — достраиваем вручную (по популярным шаблонам)
+    match_type = "exact"
+    recommended_programs = []
+
     if len(top_types) == 1:
-        base = top_types[0]
-        common_combos = {
-            'R': ['RI', 'RE', 'RC'],
-            'I': ['IR', 'IA', 'IC'],
-            'A': ['AI', 'AS', 'AR'],
-            'S': ['SC', 'SA', 'SE'],
-            'E': ['ER', 'ES', 'EC'],
-            'C': ['CR', 'CE', 'CS'],
-        }
-        top_types = list(common_combos.get(base, []))[0]  # достраиваем до пары
-        top_types = list(top_types)  # превратили строку в список символов
+        # Один тип: ищем программы, начинающиеся с этой буквы
+        riasec_code = top_types[0]
+        match_type = "starts_with"
+        recommended_programs = list(
+            ProgramRecommendation.objects.filter(riasec_type__startswith=riasec_code)
+        )
 
-    #Если 2 буквы — пробуем все варианты с 3-й буквой
     elif len(top_types) == 2:
+        # Два типа: генерируем все тройки с добавлением третьей
         all_types = {'R', 'I', 'A', 'S', 'E', 'C'}
-        candidates = []
-        for t in all_types - set(top_types):
-            candidates.append(''.join(top_types + [t]))
-        top_types = list(top_types)  # чтобы совместимо с остальной логикой
-
-        # и используем этот список в запросе ниже:
+        candidates = [''.join(top_types + [t]) for t in all_types - set(top_types)]
         riasec_code = ''.join(top_types)
         match_type = "short"
-
         recommended_programs = list(
             ProgramRecommendation.objects.filter(riasec_type__in=candidates)
         )
 
-    # Сохраняем результат в БД
+    else:
+        # Три и более: сначала точное совпадение
+        riasec_code = ''.join(top_types[:3])
+        recommended_programs = list(
+            ProgramRecommendation.objects.filter(riasec_type=riasec_code)
+        )
+
+        if not recommended_programs:
+            # Перестановки
+            match_type = "permutation"
+            perms = [''.join(p) for p in permutations(top_types[:3], 3)]
+            recommended_programs = list(
+                ProgramRecommendation.objects.filter(riasec_type__in=perms)
+            )
+
+        if not recommended_programs:
+            # Совпадают хотя бы 2 буквы
+            match_type = "similar"
+            all_codes = ProgramRecommendation.objects.values_list('riasec_type', flat=True).distinct()
+            similar_codes = []
+            for code in all_codes:
+                if len(code) != 3:
+                    continue
+                match_count = sum(1 for c in code if c in top_types[:3])
+                if match_count >= 2:
+                    similar_codes.append(code)
+            recommended_programs = list(
+                ProgramRecommendation.objects.filter(riasec_type__in=similar_codes)
+            )
+
+    random.shuffle(recommended_programs)
+    recommended_programs = recommended_programs[:5]
+
+    # Сохраняем в БД
     result = RIASECResult(
         user=request.user if request.user.is_authenticated else None,
         session_key=request.session.session_key if not request.user.is_authenticated else None,
@@ -222,40 +246,10 @@ def test_result(request):
     )
     result.save()
 
-    # Строгое совпадение трёхбуквенного кода
-    riasec_code = ''.join(top_types[:3])
-    recommended_programs = []
-    match_type = "exact"
-
-    # 1. Ищем точное совпадение
-    recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type=riasec_code))
-
-    # 2. Перестановки
-    if not recommended_programs:
-        match_type = "permutation"
-        perms = [''.join(p) for p in permutations(top_types, 3)]
-        recommended_programs = list(
-            ProgramRecommendation.objects.filter(riasec_type__in=perms)
-        )
-
-    # 3. Похожие по 2/3 буквам
-    if not recommended_programs:
-        match_type = "similar"
-        all_codes = ProgramRecommendation.objects.values_list('riasec_type', flat=True).distinct()
-        similar_codes = []
-        for code in all_codes:
-            if len(code) != 3:
-                continue
-            match_count = sum(1 for c in code if c in top_types)
-            if match_count >= 2:
-                similar_codes.append(code)
-
-        recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=similar_codes))
-    recommended_programs = recommended_programs[:5]
     context = {
         'scores': scores_dict,
         'sorted_results': sorted_results,
-        'top_types': top_types,
+        'top_types': top_types[:3],
         'recommended_programs': recommended_programs,
         'match_type': match_type
     }

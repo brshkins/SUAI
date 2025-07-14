@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-gnx)ek&k+#(&1te*&&bwhlerv_!+@bj=q$3i68x&v%bxc9!rig
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['octs.guap.ru', 'octs.guap.ru:8000']
+ALLOWED_HOSTS = ['octs.guap.ru', 'octs.guap.ru:8000', '127.0.0.1', 'localhost']
 
 CSRF_TRUSTED_ORIGINS = [
     'https://octs.guap.ru',
@@ -109,7 +109,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # Указывает на папку static в корне
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'faculties', 'static')]  # Указывает на папку static в корне
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # Для collectstatic
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
