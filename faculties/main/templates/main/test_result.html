@@ -265,9 +265,38 @@
             {% endfor %}
         </div>
 
-        <div class="text-center">
-            <a href="{% url 'test' %}" class="btn">Пройти тест снова</a>
+        <!-- NPS Form + Restart Button -->
+    <div class="text-center" style="margin-top: 60px;">
+        <div class="result-section" style="margin-bottom: 30px;">
+            <div class="result-title">Насколько Вам понравился наш тест?</div>
+            <form method="post" action="{% url 'nps_submit' %}">
+                {% csrf_token %}
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 20px 0;">
+                    {% for i in "0123456789"|make_list %}
+                        <label>
+                            <input type="radio" name="score" value="{{ i }}" style="display: none;" required>
+                            <span class="type-badge" onclick="selectNPS(this)">{{ i }}</span>
+                        </label>
+                    {% endfor %}
+                    <label>
+                        <input type="radio" name="score" value="10" style="display: none;" required>
+                        <span class="type-badge" onclick="selectNPS(this)">10</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn">Отправить</button>
+            </form>
         </div>
+
+        <a href="{% url 'test' %}" class="btn">Пройти тест снова</a>
     </div>
+</div>
+
+<script>
+    function selectNPS(el) {
+        const all = document.querySelectorAll('form .type-badge');
+        all.forEach(btn => btn.style.outline = 'none');
+        el.style.outline = '2px solid white';
+    }
+</script>
 </body>
 </html>

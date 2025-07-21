@@ -286,3 +286,17 @@ def test_result(request):
     }
 
     return render(request, 'main/test_result.html', context)
+
+from django.shortcuts import redirect
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def nps_submit(request):
+    if request.method == 'POST':
+        score = int(request.POST.get('score'))
+        # Можно сохранить score в БД или лог
+        print(f"NPS: {score}")  # или save_to_db(score)
+
+        return redirect('thank_you')  # или верни финальный экран
+
+    return redirect('home')
