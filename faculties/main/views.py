@@ -182,13 +182,26 @@ def test_result(request):
     if request.method != 'POST':
         return redirect('test')
 
-    # Подсчёт баллов
-    scores = defaultdict(int)
+    type_weights = {
+        'R': 1.3,
+        'I': 1.2,
+        'A': 0.7,
+        'S': 0.8,
+        'E': 0.9,
+        'C': 1.4
+    }
+
+    # 1. Подсчёт "сырых" баллов
+    raw_scores = defaultdict(int)
     for q_id in range(1, 13):
         answer = request.POST.get(f'q{q_id}')
         if answer in ['R', 'I', 'A', 'S', 'E', 'C']:
-            scores[answer] += 1
+            raw_scores[answer] += 1
 
+    # 2. Применение коэффициентов
+    scores = {k: round(raw_scores[k] * type_weights.get(k, 1.0), 2) for k in raw_scores}
+
+    # 3. Сортировка и топовые типы
     scores_dict = dict(scores)
     sorted_results = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
     top_types = [t for t, _ in sorted_results if _ > 0]
