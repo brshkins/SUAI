@@ -1,0 +1,44 @@
+# created by virtualenv automatically
+../.venv/Lib
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django database
+*.sqlite3
+
+# Env
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# VS Code / PyCharm settings
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Static/media
+staticfiles/
+media/
+
+# PyInstaller
+*.spec
+
+# Logs
+*.log
+
+# Git itself
+.git/
+
+# Coverage / testing
+htmlcov/
+.coverage
+coverage.xml
+.cache/
+.pytest_cache/
