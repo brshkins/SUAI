@@ -4,7 +4,10 @@ from .models import RIASECResult, ProgramRecommendation
 from django.db.models import Q
 from itertools import permutations
 import random
-
+from django.views.decorators.csrf import csrf_exempt
+from itertools import permutations
+import uuid
+import requests
 
 # 12 вопросов с вариантами RIASEC
 questions = {
@@ -178,6 +181,8 @@ def get_programs_for_single_type(leading_type, max_programs=5):
 
     return selected_programs
 
+WEBHOOK_URL = 'https://octs.guap.ru:5678/webhook-test/84f646dc-8c27-46dd-b2d6-a57e0cf7b09b'
+
 def test_result(request):
     if request.method != 'POST':
         return redirect('test')
@@ -191,17 +196,13 @@ def test_result(request):
         'C': 1.4
     }
 
-    # 1. Подсчёт "сырых" баллов
     raw_scores = defaultdict(int)
     for q_id in range(1, 13):
         answer = request.POST.get(f'q{q_id}')
-        if answer in ['R', 'I', 'A', 'S', 'E', 'C']:
+        if answer in type_weights:
             raw_scores[answer] += 1
 
-    # 2. Применение коэффициентов
     scores = {k: round(raw_scores[k] * type_weights.get(k, 1.0), 2) for k in raw_scores}
-
-    # 3. Сортировка и топовые типы
     scores_dict = dict(scores)
     sorted_results = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
     top_types = [t for t, _ in sorted_results if _ > 0]
@@ -217,12 +218,13 @@ def test_result(request):
         'E': ['ESC'],
     }
 
+    final_direction = ""
+    riasec_code = ""
+
     if len(top_types) == 1:
         match_type = "popular_codes"
         lead = top_types[0]
-        recommended_programs = []
         used_program_ids = set()
-
         for code in POPULAR_CODES_BY_LEAD.get(lead, []):
             programs = ProgramRecommendation.objects.filter(riasec_type=code).exclude(id__in=used_program_ids)
             if programs.exists():
@@ -233,7 +235,6 @@ def test_result(request):
                 break
 
     elif len(top_types) == 2:
-        # Два типа: генерируем все тройки с добавлением третьей
         all_types = {'R', 'I', 'A', 'S', 'E', 'C'}
         candidates = [''.join(top_types + [t]) for t in all_types - set(top_types)]
         riasec_code = ''.join(top_types)
@@ -243,14 +244,12 @@ def test_result(request):
         )
 
     else:
-        # Три и более: сначала точное совпадение
         riasec_code = ''.join(top_types[:3])
         recommended_programs = list(
             ProgramRecommendation.objects.filter(riasec_type=riasec_code)
         )
 
         if not recommended_programs:
-            # Перестановки
             match_type = "permutation"
             perms = [''.join(p) for p in permutations(top_types[:3], 3)]
             recommended_programs = list(
@@ -258,7 +257,6 @@ def test_result(request):
             )
 
         if not recommended_programs:
-            # Совпадают хотя бы 2 буквы
             match_type = "similar"
             all_codes = ProgramRecommendation.objects.values_list('riasec_type', flat=True).distinct()
             similar_codes = []
@@ -273,8 +271,8 @@ def test_result(request):
             )
 
     recommended_programs = recommended_programs[:5]
+    final_direction = recommended_programs[0].program_name if recommended_programs else ""
 
-    # Сохраняем в БД
     result = RIASECResult(
         user=request.user if request.user.is_authenticated else None,
         session_key=request.session.session_key if not request.user.is_authenticated else None,
@@ -290,26 +288,52 @@ def test_result(request):
     )
     result.save()
 
+    # === ОТПРАВКА НА ВЕБХУК ===
+    session_id = str(uuid.uuid4())
+
+    payload = {
+        "session_id": session_id,
+        "result": {
+            "riasec_code": riasec_code,
+            "final_direction": final_direction
+        }
+    }
+
+    try:
+        response = requests.post(WEBHOOK_URL, json=payload)
+        print(f"[WEBHOOK] Отправка успешна: {response.status_code}")
+    except Exception as e:
+        print(f"[WEBHOOK ERROR] {e}")
+
     context = {
         'scores': scores_dict,
         'sorted_results': sorted_results,
         'top_types': top_types[:3],
         'recommended_programs': recommended_programs,
-        'match_type': match_type
+        'match_type': match_type,
+        'session_id': session_id  # ← чтобы потом передать в форму обратной связи
     }
 
     return render(request, 'main/test_result.html', context)
 
-from django.shortcuts import redirect
-from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
 def nps_submit(request):
     if request.method == 'POST':
-        score = int(request.POST.get('score'))
-        # Можно сохранить score в БД или лог
-        print(f"NPS: {score}")  # или save_to_db(score)
+        score = request.POST.get('score')
+        session_id = request.POST.get('session_id')
 
-        return redirect('thank_you')  # или верни финальный экран
+        payload = {
+            'type': 'nps_feedback',
+            'session_id': session_id,
+            'score': score
+        }
 
-    return redirect('home')
+        try:
+            requests.post(WEBHOOK_URL, json=payload, timeout=3)
+        except Exception as e:
+            print(f'Ошибка при отправке NPS на вебхук: {e}')
+
+        return render(request, 'main/thanks.html')
+
+    return redirect('test')

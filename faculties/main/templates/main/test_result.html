@@ -265,12 +265,13 @@
             {% endfor %}
         </div>
 
-        <!-- NPS Form + Restart Button -->
+    <!-- NPS Form + Restart Button -->
     <div class="text-center" style="margin-top: 60px;">
         <div class="result-section" style="margin-bottom: 30px;">
             <div class="result-title">Насколько Вам понравился наш тест?</div>
             <form method="post" action="{% url 'nps_submit' %}">
                 {% csrf_token %}
+                <input type="hidden" name="session_id" value="{{ session_id }}">
                 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 20px 0;">
                     {% for i in "0123456789"|make_list %}
                         <label>
@@ -287,8 +288,7 @@
             </form>
         </div>
 
-        <a href="{% url 'test' %}" class="btn">Пройти тест снова</a>
-    </div>
+</div>
 </div>
 
 <script>

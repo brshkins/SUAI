@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Спасибо!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background: url('{% static "main/img/bg.jpg" %}') no-repeat bottom center / cover;
+            background-size: cover;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(15, 15, 45, 0.7);
+            border: 1px solid rgba(0, 126, 223, 0.2);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0, 126, 223, 0.6);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #00a8e8;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #d1e8ff;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            background: linear-gradient(90deg, #161D56, #161D56);
+            border: none;
+            color: white;
+            padding: 14px 32px;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 10px;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow:
+                0 0 15px rgba(255,255,255,.8),
+                0 0 25px rgba(255,255,255,.7),
+                0 0 40px rgba(255,255,255,.6);
+            background: linear-gradient(90deg, var(--blue-light), var(--violet-lighter));
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Спасибо за ваш отзыв!</h1>
+        <p>Нам важно ваше мнение. Благодаря вам мы становимся лучше</p>
+        <a href="{% url 'test' %}" class="btn">Пройти тест снова</a>
+        <a href="{% url 'index' %}" class="btn">Перейти на главную</a>
+    </div>
+</body>
+</html>
