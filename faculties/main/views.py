@@ -181,7 +181,7 @@ def get_programs_for_single_type(leading_type, max_programs=5):
 
     return selected_programs
 
-WEBHOOK_URL = 'https://octs.guap.ru:5678/webhook-test/84f646dc-8c27-46dd-b2d6-a57e0cf7b09b'
+WEBHOOK_URL = 'https://octs.guap.ru/services/n8n/webhook/webhook/84f646dc-8c27-46dd-b2d6-a57e0cf7b09b'
 
 def test_result(request):
     if request.method != 'POST':
