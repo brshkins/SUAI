@@ -8,6 +8,8 @@ from django.views.decorators.csrf import csrf_exempt
 from itertools import permutations
 import uuid
 import requests
+import logging
+logger = logging.getLogger(__name__)
 
 # 12 вопросов с вариантами RIASEC
 questions = {
@@ -301,9 +303,9 @@ def test_result(request):
 
     try:
         response = requests.post(WEBHOOK_URL, json=payload)
-        print(f"[WEBHOOK] Отправка успешна: {response.status_code}")
+        logger.info(f"[WEBHOOK] Отправка успешна: {response.status_code}")
     except Exception as e:
-        print(f"[WEBHOOK ERROR] {e}")
+        logger.error(f"[WEBHOOK ERROR] {e}")
 
     context = {
         'scores': scores_dict,
@@ -332,7 +334,7 @@ def nps_submit(request):
         try:
             requests.post(WEBHOOK_URL, json=payload, timeout=3)
         except Exception as e:
-            print(f'Ошибка при отправке NPS на вебхук: {e}')
+            logger.error(f'Ошибка при отправке NPS на вебхук: {e}')
 
         return render(request, 'main/thanks.html')
 
