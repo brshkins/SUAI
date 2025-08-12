@@ -9,6 +9,8 @@ from itertools import permutations
 import uuid
 import requests
 import logging
+from django.utils.timezone import now
+
 logger = logging.getLogger(__name__)
 
 # 12 вопросов с вариантами RIASEC
@@ -150,64 +152,50 @@ def index(request):
     return render(request, 'main/index.html')
 
 def test_views(request):
+    if not request.session.session_key:
+        request.session.save()
     return render(request, 'main/test.html', {'questions': questions})
 
-
 def expand_code_if_needed(top_types, scores_dict):
+    """Возвращает всегда 3 буквы кода, дополняя недостающие по убыванию баллов."""
     if len(top_types) >= 3:
         return top_types[:3]
-
-    # Дополняем по убыванию частоты
     all_sorted = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
-    added = [t for t, _ in all_sorted if t not in top_types]
-
-    while len(top_types) < 3 and added:
-        top_types.append(added.pop(0))
-
-    return top_types[:3]
-
-def get_programs_for_single_type(leading_type, max_programs=5):
-    all_codes = ProgramRecommendation.objects.filter(riasec_type__startswith=leading_type)\
-        .values_list('riasec_type', flat=True).distinct()
-    used_codes = set()
-    selected_programs = []
-
-    for code in all_codes:
-        if code not in used_codes:
-            program = ProgramRecommendation.objects.filter(riasec_type=code).order_by('?').first()
-            if program:
-                selected_programs.append(program)
-                used_codes.add(code)
-            if len(selected_programs) >= max_programs:
-                break
-
-    return selected_programs
+    add = [t for t, _ in all_sorted if t not in top_types]
+    res = list(top_types)
+    while len(res) < 3 and add:
+        res.append(add.pop(0))
+    return res[:3]
 
 WEBHOOK_URL = 'https://octs.guap.ru/services/n8n/webhook/webhook/84f646dc-8c27-46dd-b2d6-a57e0cf7b09b'
 
 def test_result(request):
+    if not request.session.session_key:
+        request.session.save()
     if request.method != 'POST':
         return redirect('test')
 
-    type_weights = {
-        'R': 1.3,
-        'I': 1.2,
-        'A': 0.7,
-        'S': 0.8,
-        'E': 0.9,
-        'C': 1.4
-    }
+    # коэффициенты
+    type_weights = {'R': 1.3, 'I': 1.2, 'A': 0.7, 'S': 0.8, 'E': 0.9, 'C': 1.4}
 
-    raw_scores = defaultdict(int)
+    # подсчёт «сырых» баллов
+    raw = defaultdict(int)
     for q_id in range(1, 13):
-        answer = request.POST.get(f'q{q_id}')
-        if answer in type_weights:
-            raw_scores[answer] += 1
+        ans = request.POST.get(f'q{q_id}')
+        if ans in type_weights:
+            raw[ans] += 1
 
-    scores = {k: round(raw_scores[k] * type_weights.get(k, 1.0), 2) for k in raw_scores}
+    # применение коэффициентов
+    scores = {k: round(raw[k] * type_weights.get(k, 1.0), 2) for k in raw}
     scores_dict = dict(scores)
+
+    # сортировка и топы
     sorted_results = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
-    top_types = [t for t, _ in sorted_results if _ > 0]
+    top_types = [t for t, v in sorted_results if v > 0]
+
+    # всегда делаем код из 3 букв
+    code3 = expand_code_if_needed(top_types, scores_dict)
+    riasec_code = ''.join(code3)
 
     match_type = "exact"
     recommended_programs = []
@@ -220,61 +208,42 @@ def test_result(request):
         'E': ['ESC'],
     }
 
-    final_direction = ""
-    riasec_code = ""
-
     if len(top_types) == 1:
-        match_type = "popular_codes"
         lead = top_types[0]
-        used_program_ids = set()
+        used_ids = set()
         for code in POPULAR_CODES_BY_LEAD.get(lead, []):
-            programs = ProgramRecommendation.objects.filter(riasec_type=code).exclude(id__in=used_program_ids)
-            if programs.exists():
-                selected = random.choice(programs)
-                recommended_programs.append(selected)
-                used_program_ids.add(selected.id)
+            qs = ProgramRecommendation.objects.filter(riasec_type=code).exclude(id__in=used_ids)
+            if qs.exists():
+                p = qs.order_by('?').first()
+                recommended_programs.append(p)
+                used_ids.add(p.id)
             if len(recommended_programs) >= 5:
                 break
-
     elif len(top_types) == 2:
         all_types = {'R', 'I', 'A', 'S', 'E', 'C'}
         candidates = [''.join(top_types + [t]) for t in all_types - set(top_types)]
-        riasec_code = ''.join(top_types)
         match_type = "short"
-        recommended_programs = list(
-            ProgramRecommendation.objects.filter(riasec_type__in=candidates)
-        )
-
+        recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=candidates))
     else:
-        riasec_code = ''.join(top_types[:3])
-        recommended_programs = list(
-            ProgramRecommendation.objects.filter(riasec_type=riasec_code)
-        )
-
+        recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type=riasec_code))
         if not recommended_programs:
+            from itertools import permutations
             match_type = "permutation"
-            perms = [''.join(p) for p in permutations(top_types[:3], 3)]
-            recommended_programs = list(
-                ProgramRecommendation.objects.filter(riasec_type__in=perms)
-            )
-
+            perms = [''.join(p) for p in permutations(code3, 3)]
+            recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=perms))
         if not recommended_programs:
             match_type = "similar"
             all_codes = ProgramRecommendation.objects.values_list('riasec_type', flat=True).distinct()
-            similar_codes = []
+            similar = []
             for code in all_codes:
-                if len(code) != 3:
-                    continue
-                match_count = sum(1 for c in code if c in top_types[:3])
-                if match_count >= 2:
-                    similar_codes.append(code)
-            recommended_programs = list(
-                ProgramRecommendation.objects.filter(riasec_type__in=similar_codes)
-            )
+                if len(code) == 3 and sum(1 for c in code if c in code3) >= 2:
+                    similar.append(code)
+            recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=similar))
 
     recommended_programs = recommended_programs[:5]
     final_direction = recommended_programs[0].program_name if recommended_programs else ""
 
+    # сохраняем в БД (как было)
     result = RIASECResult(
         user=request.user if request.user.is_authenticated else None,
         session_key=request.session.session_key if not request.user.is_authenticated else None,
@@ -284,57 +253,62 @@ def test_result(request):
         social=scores_dict.get('S', 0),
         enterprising=scores_dict.get('E', 0),
         conventional=scores_dict.get('C', 0),
-        primary_type=top_types[0] if len(top_types) > 0 else 'R',
-        secondary_type=top_types[1] if len(top_types) > 1 else 'I',
-        tertiary_type=top_types[2] if len(top_types) > 2 else 'A',
+        primary_type=code3[0] if len(code3) > 0 else 'R',
+        secondary_type=code3[1] if len(code3) > 1 else 'I',
+        tertiary_type=code3[2] if len(code3) > 2 else 'A',
     )
     result.save()
 
-    # === ОТПРАВКА НА ВЕБХУК ===
-    session_id = str(uuid.uuid4())
+    # стабильный session_id (ключ Django‑сессии)
+    session_id = request.session.session_key
+    if not session_id:
+        request.session.save()
+        session_id = request.session.session_key
+    request.session['session_id'] = session_id  # пригодится в nps_submit
 
+    # список всех направлений: "код — название"
+    programs_list = [f"{p.program_code} — {p.program_name}" for p in recommended_programs]
+
+    # отправка на вебхук
     payload = {
+        "type": "test_result",
         "session_id": session_id,
-        "result": {
-            "riasec_code": riasec_code,
-            "final_direction": final_direction
-        }
+        "code": riasec_code,
+        "programs": programs_list,
+        "timestamp": now().isoformat(),
     }
-
     try:
-        response = requests.post(WEBHOOK_URL, json=payload)
-        logger.info(f"[WEBHOOK] Отправка успешна: {response.status_code}")
+        resp = requests.post(WEBHOOK_URL, json=payload, timeout=4)
+        logger.info("[WEBHOOK] test_result sent: %s", resp.status_code)
     except Exception as e:
-        logger.error(f"[WEBHOOK ERROR] {e}")
+        logger.exception("WEBHOOK send error: %s", e)
 
     context = {
         'scores': scores_dict,
         'sorted_results': sorted_results,
-        'top_types': top_types[:3],
+        'top_types': code3,
         'recommended_programs': recommended_programs,
         'match_type': match_type,
-        'session_id': session_id  # ← чтобы потом передать в форму обратной связи
+        'session_id': session_id,
     }
-
     return render(request, 'main/test_result.html', context)
-
 
 @csrf_exempt
 def nps_submit(request):
     if request.method == 'POST':
         score = request.POST.get('score')
-        session_id = request.POST.get('session_id')
+        session_id = request.POST.get('session_id') or request.session.get('session_id')
 
         payload = {
-            'type': 'nps_feedback',
-            'session_id': session_id,
-            'score': score
+            "type": "nps_feedback",
+            "session_id": session_id,
+            "score": score,
+            "timestamp": now().isoformat(),
         }
-
         try:
-            requests.post(WEBHOOK_URL, json=payload, timeout=3)
+            requests.post(WEBHOOK_URL, json=payload, timeout=4)
         except Exception as e:
-            logger.error(f'Ошибка при отправке NPS на вебхук: {e}')
+            logger.exception("NPS webhook error: %s", e)
 
         return render(request, 'main/thanks.html')
 

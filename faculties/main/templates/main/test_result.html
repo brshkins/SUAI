@@ -287,15 +287,15 @@
                 <button type="submit" class="btn">Отправить</button>
             </form>
         </div>
-
-</div>
-</div>
-
+    </div>
+    </div>
 <script>
     function selectNPS(el) {
         const all = document.querySelectorAll('form .type-badge');
         all.forEach(btn => btn.style.outline = 'none');
         el.style.outline = '2px solid white';
+        const input = el.previousElementsSibling;
+        if (input) input.checked = true;
     }
 </script>
 </body>
