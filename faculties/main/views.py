@@ -226,11 +226,21 @@ def test_result(request):
         recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=candidates))
     else:
         recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type=riasec_code))
-        if not recommended_programs:
-            from itertools import permutations
-            match_type = "permutation"
-            perms = [''.join(p) for p in permutations(code3, 3)]
-            recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=perms))
+        match_type = "permutation"
+        perms = [''.join(p) for p in permutations(code3, 3)]
+        recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=perms))
+
+        if len(recommended_programs) < 5:
+            match_type = "similar"
+            all_codes = ProgramRecommendation.objects.values_list('riasec_type', flat=True).distinct()
+            similar = []
+            for code in all_codes:
+                if len(code) == 3 and sum(1 for c in code if c in code3) >= 2:
+                    similar.append(code)
+
+            already_ids = set(p.id for p in recommended_programs)
+            additional = ProgramRecommendation.objects.filter(riasec_type__in=similar).exclude(id__in=already_ids)
+            recommended_programs += list(additional[:5 - len(recommended_programs)])
         if not recommended_programs:
             match_type = "similar"
             all_codes = ProgramRecommendation.objects.values_list('riasec_type', flat=True).distinct()
