@@ -320,6 +320,11 @@ def nps_submit(request):
         except Exception as e:
             logger.exception("NPS webhook error: %s", e)
 
+        try:
+            request.session.flush()
+        except Exception as e:
+            logger.warning(f'ошибка при удалении сессии: {e}')
+
         return render(request, 'main/thanks.html')
 
     return redirect('test')
