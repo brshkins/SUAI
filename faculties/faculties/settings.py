@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-gnx)ek&k+#(&1te*&&bwhlerv_!+@bj=q$3i68x&v%bxc9!rig
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['octs.guap.ru', 'octs.guap.ru:8000']
+ALLOWED_HOSTS = ['octs.guap.ru', 'octs.guap.ru:8000', 'proftest.guap.ru']
 
 CSRF_TRUSTED_ORIGINS = [
     'https://octs.guap.ru',
