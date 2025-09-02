@@ -219,11 +219,27 @@ def test_result(request):
                 used_ids.add(p.id)
             if len(recommended_programs) >= 5:
                 break
+
     elif len(top_types) == 2:
-        all_types = {'R', 'I', 'A', 'S', 'E', 'C'}
-        candidates = [''.join(top_types + [t]) for t in all_types - set(top_types)]
+        # расширяем до 3 букв
+        extended_code = expand_code_if_needed(top_types, scores_dict)
+
+        # генерируем все перестановки
+        perms = [''.join(p) for p in permutations(extended_code, 3)]
+
         match_type = "short"
-        recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=candidates))
+
+        recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=perms))
+
+        # если совсем пусто — ищем хотя бы похожие (2 совпадения из 3)
+        if not recommended_programs:
+            all_codes = ProgramRecommendation.objects.values_list('riasec_type', flat=True).distinct()
+            similar = []
+            for code in all_codes:
+                if len(code) == 3 and sum(1 for c in code if c in extended_code) >= 2:
+                    similar.append(code)
+            recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type__in=similar))
+
     else:
         recommended_programs = list(ProgramRecommendation.objects.filter(riasec_type=riasec_code))
         match_type = "permutation"
